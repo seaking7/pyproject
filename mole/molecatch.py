@@ -30,7 +30,10 @@ mole_size = mole_img1.get_size()
 mole_size = tup_r((mole_size[0] * 0.6, mole_size[1] * 0.6))
 mole_img1 = pygame.transform.smoothscale(mole_img1, mole_size)
 mole_img2 = pygame.transform.smoothscale(mole_img2, mole_size)
-
+hammer_img = pygame.image.load("hammer.png")
+hammer_size = hammer_img.get_size()
+hammer_size = tup_r((hammer_size[0] * 0.4, hammer_size[1] * 0.4))
+hammer_img = pygame.transform.smoothscale(hammer_img, hammer_size)
 
 
 
@@ -93,6 +96,9 @@ while not exit_state:
             exit_state = True
         if event.type == pygame.MOUSEBUTTONDOWN:
             click_go = True
+            hammer_img = pygame.transform.rotate(hammer_img, 90)
+        if event.type == pygame.MOUSEBUTTONUP:
+            hammer_img = pygame.transform.rotate(hammer_img, -90)
 
     now_time = pygame.time.get_ticks()
     for mole in mole_list:
@@ -110,12 +116,16 @@ while not exit_state:
                     mole.img = mole_img2
         click_go = False
 
+    x, y = pygame.mouse.get_pos()
+    hammer_pos = (x, y - hammer_size[1])
+
 
 
     # 그리기
     screen.blit(bg_img, (0, 0))
     for mole in mole_list:
         mole.show()
+    screen.blit(hammer_img, hammer_pos )
     pygame.display.flip()
 
 pygame.quit()
