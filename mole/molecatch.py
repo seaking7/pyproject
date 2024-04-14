@@ -36,10 +36,11 @@ hammer_size = tup_r((hammer_size[0] * 0.4, hammer_size[1] * 0.4))
 hammer_img = pygame.transform.smoothscale(hammer_img, hammer_size)
 game_point = 0
 game_time = 10000
+game_over = False
 
 point_font = pygame.font.Font("/System/Library/Fonts/Supplemental/PartyLET-plain.ttf", 60)
-
-
+final_font = pygame.font.Font("/System/Library/Fonts/Supplemental/Courier New.ttf", 80)
+sound1 = pygame.mixer.Sound("applause.ogg")
 
 class mole:
     def __init__(self, i, j):
@@ -99,6 +100,7 @@ while not exit_state:
             exit_state = True
         if event.type == pygame.MOUSEBUTTONDOWN:
             click_go = True
+            sound1.play()
             hammer_img = pygame.transform.rotate(hammer_img, 90)
         if event.type == pygame.MOUSEBUTTONUP:
             hammer_img = pygame.transform.rotate(hammer_img, -90)
@@ -118,9 +120,14 @@ while not exit_state:
                     # 이미지가 내려가야됨(stage = 3), 이미지 바꾸기(맞은 이미지)
                     mole.stage = 3
                     mole.img = mole_img2
-                    game_point += 1
+                    if game_over == False:
+                        game_point += 1
 
         click_go = False
+
+    if remain_time <= 0:
+        remain_time = 0
+        game_over = True
 
     x, y = pygame.mouse.get_pos()
     hammer_pos = (x, y - hammer_size[1] * 2 / 3)
@@ -142,6 +149,17 @@ while not exit_state:
     remain_time_size = remain_time.get_size()
     remain_time_pos = tup_r((size[0] - remain_time_size[0] - 10, 10))
     screen.blit(remain_time, remain_time_pos)
+
+    if game_over == True:
+        finish_bg = pygame.Surface(size)
+        finish_bg.fill(black)
+        finish_bg.set_alpha(200)
+        screen.blit(finish_bg, (0, 0))
+        final_point = final_font.render(f"Final Score : {game_point}", True, white)
+        final_point_size = final_point.get_size()
+        final_point_pos = tup_r((size[0]/2 - final_point_size[0]/2, size[1]/2 - final_point_size[1]/2))
+        screen.blit(final_point, final_point_pos)
+
 
     pygame.display.flip()
 
