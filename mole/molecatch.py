@@ -27,13 +27,17 @@ bg_img = pygame.transform.smoothscale(bg_img, size)
 mole_img1 = pygame.image.load("mole1.png")
 mole_img2 = pygame.image.load("mole2.png")
 mole_size = mole_img1.get_size()
-mole_size = tup_r((mole_size[0] * 0.6, mole_size[1] * 0.6))
+mole_size = tup_r((mole_size[0] * 0.5, mole_size[1] * 0.5))
 mole_img1 = pygame.transform.smoothscale(mole_img1, mole_size)
 mole_img2 = pygame.transform.smoothscale(mole_img2, mole_size)
 hammer_img = pygame.image.load("hammer.png")
 hammer_size = hammer_img.get_size()
 hammer_size = tup_r((hammer_size[0] * 0.4, hammer_size[1] * 0.4))
 hammer_img = pygame.transform.smoothscale(hammer_img, hammer_size)
+game_point = 0
+game_time = 10000
+
+point_font = pygame.font.Font("/System/Library/Fonts/Supplemental/PartyLET-plain.ttf", 60)
 
 
 
@@ -56,7 +60,7 @@ class mole:
         elif self.stage == 1:
             self.crop += self.move
             if self.crop >= self.size[1]:
-                self.crop =  self.size[1]
+                self.crop = self.size[1]
                 self.stage = 2
                 self.stay_start = now_time
         elif self.stage == 2:
@@ -74,9 +78,9 @@ class mole:
         self.pos = tup_r((x_list[self.i] - self.size[0] / 2, y_list[self.j] - self.crop))
         self.range = (self.pos[0], self.pos[1], self.size[0], self.crop)
 
-
     def show(self):
         screen.blit(self.img_cropped, self.pos)
+
 
 mole_list = []
 for i in range(3):
@@ -85,9 +89,8 @@ for i in range(3):
 click_go = False
 exit_state = False
 
-
-
 # 메인 이벤트
+game_start_tme = pygame.time.get_ticks()
 while not exit_state:
     clock.tick(60)
     # 각종 입력 감지
@@ -101,6 +104,7 @@ while not exit_state:
             hammer_img = pygame.transform.rotate(hammer_img, -90)
 
     now_time = pygame.time.get_ticks()
+    remain_time = round((game_time - (now_time - game_start_tme)) / 1000)
     for mole in mole_list:
         mole.crop_change()
 
@@ -114,18 +118,31 @@ while not exit_state:
                     # 이미지가 내려가야됨(stage = 3), 이미지 바꾸기(맞은 이미지)
                     mole.stage = 3
                     mole.img = mole_img2
+                    game_point += 1
+
         click_go = False
 
     x, y = pygame.mouse.get_pos()
-    hammer_pos = (x, y - hammer_size[1])
-
-
+    hammer_pos = (x, y - hammer_size[1] * 2 / 3)
 
     # 그리기
     screen.blit(bg_img, (0, 0))
     for mole in mole_list:
         mole.show()
-    screen.blit(hammer_img, hammer_pos )
+    screen.blit(hammer_img, hammer_pos)
+
+    # 점수표시
+    point = point_font.render(f"Score : {game_point}", True, black)
+    point_size = point.get_size()
+    point_pos = tup_r((10, 10))
+    screen.blit(point, point_pos)
+
+    # 남은 시간
+    remain_time = point_font.render(f"Time : {remain_time}", True, black)
+    remain_time_size = remain_time.get_size()
+    remain_time_pos = tup_r((size[0] - remain_time_size[0] - 10, 10))
+    screen.blit(remain_time, remain_time_pos)
+
     pygame.display.flip()
 
 pygame.quit()
