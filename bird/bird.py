@@ -36,14 +36,14 @@ person_size = person_static.get_size()
 p_left_list = [img_read("man_left1", 1), img_read("man_left2", 1), img_read("man_left3", 1)]
 p_right_list = [img_read("man_right1", 1), img_read("man_right2", 1), img_read("man_right3", 1)]
 
-bird_list = [img_read("bird1", 0.5), img_read("bird2", 0.5), img_read("bird3", 0.5),
-             img_read("bird4", 0.5), img_read("bird5", 0.5), img_read("bird6", 0.5)]
+bird_img_list = [img_read("bird1", 0.5), img_read("bird2", 0.5), img_read("bird3", 0.5),
+                 img_read("bird4", 0.5), img_read("bird5", 0.5), img_read("bird6", 0.5)]
 
 dung_img = img_read("dung", 1)
 
 class Bird:
     def __init__(self):
-        self.img = bird_list[0]
+        self.img = bird_img_list[0]
         self.size = self.img.get_size()
         self.create_x = -self.size[0]
         self.create_y = random.randrange(50, 400)
@@ -92,26 +92,34 @@ class Person:
 
 
 class Dung:
-    def __init__(self, x, y, x_speed):
+    def __init__(self, x, y, target_x):
         self.img = dung_img
-        self.pos = x, y
-        self.x_speed = x_speed
+
         self.y_speed = 3
         self.acceleration = 0.1
-        self.size = self.img.get_size()
+
+        self.target_x = target_x
+        self.target_y = size[1]
+        self.dx = self.target_x - x
+        self.dy = self.target_y - y
+        self.dd = (self.dx ** 2 + self.dy ** 2) ** 0.5  # 빗변(피타고라스 정리)
+        self.pos = x, y
+        self.move = random.randrange(3, 10)
+        self.x_speed = self.move * self.dx / self.dd
 
     def show(self):
         screen.blit(self.img, self.pos)
 
 
 player = Person()
-bird = Bird()
+bird_list = []
+dung_list = []
 left_go = False
 right_go = False
 
 exit_state = False
 game_point = 0
-game_time = 10000
+game_time = 50000
 game_over = False
 
 point_font = pygame.font.Font("/System/Library/Fonts/Supplemental/PartyLET-plain.ttf", 60)
@@ -142,6 +150,11 @@ while not exit_state:
     now_time = pygame.time.get_ticks()
     remain_time = round((game_time - (now_time - game_start_tme)) / 1000)
 
+    # 새 생성
+    if random.random() < 0.05:
+        bird = Bird()
+        bird_list.append(bird)
+
     if left_go is True and right_go is False:
         player.pos = (player.pos[0] - player.move, player.pos[1])
         player.timer += player.any_move
@@ -161,30 +174,45 @@ while not exit_state:
         remain_time = 0
         game_over = True
 
-    bird.timer += bird.any_move
-    bird.img = bird_list[int(bird.timer) % len(bird_list)]
-    bird.pos = (bird.pos[0] + bird.x_speed, bird.pos[1] + bird.y_speed)
+    # 새 움직임
+    for bird in bird_list:
+        bird.timer += bird.any_move
+        bird.img = bird_img_list[int(bird.timer) % len(bird_img_list)]
+        bird.pos = (bird.pos[0] + bird.x_speed, bird.pos[1] + bird.y_speed)
 
-    if bird.x_speed  > 0:    # 왼쪽에서 오른쪽
-        if bird.pos[0] >= bird.drop_x and bird.drop == False:
-            dung = Dung(bird.pos[0] + bird.size[0] / 2, bird.pos[1] + bird.size[1], bird.x_speed)
-            bird.drop = True
-    else:
-        if bird.pos[0] <= bird.drop_x and bird.drop == False:
-            dung = Dung(bird.pos[0] + bird.size[0] / 2, bird.pos[1] + bird.size[1], bird.x_speed)
-            bird.drop = True
+        if bird.x_speed  > 0:    # 왼쪽에서 오른쪽
+            if bird.pos[0] >= bird.drop_x and bird.drop == False:
+                dung = Dung(bird.pos[0] + bird.size[0] / 2, bird.pos[1] + bird.size[1], player.pos[0])
+                dung_list.append(dung)
+                bird.drop = True
+        else:
+            if bird.pos[0] <= bird.drop_x and bird.drop == False:
+                dung = Dung(bird.pos[0] + bird.size[0] / 2, bird.pos[1] + bird.size[1], player.pos[0])
+                dung_list.append(dung)
+                bird.drop = True
 
 
 
     # 그리기
     screen.fill(white)
     player.show()
-    bird.show()
 
-    if bird.drop:
+    for bird in bird_list:
+        bird.show()
+
+    for dung in dung_list:
         dung.y_speed += dung.acceleration
-        dung.pos = dung.pos[0] + dung.x_speed, dung.pos[1] + dung.y_speed
+        dung.pos = (dung.pos[0] + dung.x_speed, dung.pos[1] + dung.y_speed)
         dung.show()
+
+    # 새, 새똥 소멸
+    for i, bird in enumerate(bird_list):
+        if bird.pos[0] < -bird.size[0] or bird.pos[0] > size[0]:
+            bird_list.remove(bird)
+
+    for dung in dung_list:
+        if dung.pos[1] > size[1]:
+            dung_list.remove(dung)
 
     # 점수표시
     point = point_font.render(f"Score : {game_point}", True, black)
