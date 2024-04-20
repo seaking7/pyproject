@@ -23,7 +23,7 @@ def tup_r(tup):
 
 
 def img_read(file_name, resize):
-    img = pygame.image.load(file_name + ".png")
+    img = pygame.image.load("img/" + file_name + ".png")
     img_size = img.get_size()
     img_size = (img_size[0] * resize, img_size[1] * resize)
     img = pygame.transform.smoothscale(img, img_size)
