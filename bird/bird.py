@@ -1,5 +1,7 @@
-import pygame
 import random
+
+import math
+import pygame
 
 pygame.init()
 # 게임창 옵션
@@ -34,28 +36,45 @@ person_size = person_static.get_size()
 p_left_list = [img_read("man_left1", 1), img_read("man_left2", 1), img_read("man_left3", 1)]
 p_right_list = [img_read("man_right1", 1), img_read("man_right2", 1), img_read("man_right3", 1)]
 
-bird_list = [img_read("bird1", 0.5), img_read("bird2", 0.5), img_read("bird3", 0.5)]
+bird_list = [img_read("bird1", 0.5), img_read("bird2", 0.5), img_read("bird3", 0.5),
+             img_read("bird4", 0.5), img_read("bird5", 0.5), img_read("bird6", 0.5)]
 
+dung_img = img_read("dung", 1)
 
 class Bird:
     def __init__(self):
         self.img = bird_list[0]
         self.size = self.img.get_size()
         self.create_x = -self.size[0]
-        self.create_y = 400
+        self.create_y = random.randrange(50, 400)
         self.target_x = size[0]
-        self.target_y = 100
+        self.target_y = random.randrange(50, 400)
+        if random.random() > 0.5:
+            self.create_x, self.target_x = self.target_x, self.create_x
         self.dx = self.target_x - self.create_x
         self.dy = self.target_y - self.create_y
         self.dd = (self.dx ** 2 + self.dy ** 2) ** 0.5  # 빗변(피타고라스 정리)
         self.pos = (self.create_x, self.create_y)
-        self.move = 5
-        self.move_x = self.move * self.dx / self.dd
-        self.move_y = self.move * self.dy / self.dd
-        if self.move_x < 0:
-            self.img = pygame.transform.flip(self.img, True, False)
+        self.move = random.randrange(3, 10)
+        self.x_speed = self.move * self.dx / self.dd
+        self.y_speed = self.move * self.dy / self.dd
+        self.timer = 0
+        self.any_move = 0.1
+
+        self.angle = math.atan(abs(self.dy/self.dx)) * 180 / math.pi  # 새의 날아 가는 각도 계산
+
+        self.drop_x = random.randrange(100, size[0] - 100 - self.size[0])
+        self.drop = False
 
     def show(self):
+        if self.x_speed < 0:
+            self.img = pygame.transform.flip(self.img, True, False)
+
+        if self.dx * self.dy < 0:
+            self.img = pygame.transform.rotate(self.img, self.angle)
+        else:
+            self.img = pygame.transform.rotate(self.img, -self.angle)
+
         screen.blit(self.img, self.pos)
 
 
@@ -67,6 +86,19 @@ class Person:
         self.move = 10
         self.timer = 0
         self.any_move = 0.2
+
+    def show(self):
+        screen.blit(self.img, self.pos)
+
+
+class Dung:
+    def __init__(self, x, y, x_speed):
+        self.img = dung_img
+        self.pos = x, y
+        self.x_speed = x_speed
+        self.y_speed = 3
+        self.acceleration = 0.1
+        self.size = self.img.get_size()
 
     def show(self):
         screen.blit(self.img, self.pos)
@@ -129,11 +161,30 @@ while not exit_state:
         remain_time = 0
         game_over = True
 
-    bird.pos = (bird.pos[0] + bird.move_x, bird.pos[1] + bird.move_y)
+    bird.timer += bird.any_move
+    bird.img = bird_list[int(bird.timer) % len(bird_list)]
+    bird.pos = (bird.pos[0] + bird.x_speed, bird.pos[1] + bird.y_speed)
+
+    if bird.x_speed  > 0:    # 왼쪽에서 오른쪽
+        if bird.pos[0] >= bird.drop_x and bird.drop == False:
+            dung = Dung(bird.pos[0] + bird.size[0] / 2, bird.pos[1] + bird.size[1], bird.x_speed)
+            bird.drop = True
+    else:
+        if bird.pos[0] <= bird.drop_x and bird.drop == False:
+            dung = Dung(bird.pos[0] + bird.size[0] / 2, bird.pos[1] + bird.size[1], bird.x_speed)
+            bird.drop = True
+
+
+
     # 그리기
     screen.fill(white)
     player.show()
     bird.show()
+
+    if bird.drop:
+        dung.y_speed += dung.acceleration
+        dung.pos = dung.pos[0] + dung.x_speed, dung.pos[1] + dung.y_speed
+        dung.show()
 
     # 점수표시
     point = point_font.render(f"Score : {game_point}", True, black)
